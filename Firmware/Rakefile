@@ -5,31 +5,43 @@ require 'fileutils'
 verbose(ENV['verbose'] == '1')
 TESTING = ENV['testing'].nil? ? false : ENV['testing'] == '1'
 
+Target = Struct.new(:name, :defines)
+supported_targets = [
+  Target.new(
+    'Minialpha',
+    ['-DUSE_UART0', '-DUART0_PINSET=2', '-DNOETHERNET']
+  ),
+  Target.new(
+    'Primealpha',
+    ['-DUSE_UART0', '-DUART0_PINSET=15']
+  ),
+  Target.new(
+    'Bambino',
+    ['-DUSE_UART0', '-DUART0_PINSET=6']
+  )
+];
+
 PROG = 'smoothiev2'
 if ENV['target'].nil?
   TARGET = 'Bambino'
-elsif (ENV['target'] != 'Bambino' && ENV['target'] != 'Minialpha' && ENV['target'] != 'Primealpha')
-  puts "ERROR: Must specify target=[Bambino|Minialpha|Primealpha]"
-  exit 0
 else
   TARGET = ENV['target']
 end
 
-target_defines= []
-if TARGET == 'Minialpha'
-  # need to select the UART to use
-  target_defines << '-DUSE_UART0'
-  # select the pinset either 2 or 6
-  target_defines << '-DUART0_PINSET=2'
-  target_defines << "-DNOETHERNET"
-elsif TARGET == 'Primealpha'
-  # on G5
-  target_defines << '-DUSE_UART0'
-  target_defines << "-DUART0_PINSET=15"
-elsif TARGET == 'Bambino'
-  target_defines << '-DUSE_UART0'
-  target_defines << '-DUART0_PINSET=6'
+target_struct = nil
+supported_targets.each do |target|
+  if target.name == TARGET
+    target_struct = target
+    break
+  end
 end
+
+if target_struct.nil?
+  puts "ERROR: Must specify target=[#{supported_targets.map{|t| t.name}.join(' ,')}]"
+  exit 0
+end
+
+target_defines = target_struct.defines
 
 puts "Target is #{TARGET}"
 
